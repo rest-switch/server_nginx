@@ -16,57 +16,49 @@
 # Author: John Clark (johnc@restswitch.com)
 #
 
-
-NGINX_SRC_URL   := http://nginx.org/download/nginx-1.8.0.tar.gz
-NGINX_ROOT      := nginx-1.8.0
-NGINX_MAKEFILE  :=file
-MOD_PS_SRC_URL  := https://github.com/wandenberg/nginx-push-stream-module/archive/master.tar.gz
-MOD_PS_ROOT     := ngx_http_push_stream_module
+DOCKER        := docker
+DOCKER_TAG    := restswitch/server_nginx
+DOCKER_IMGS   := $$(docker images | grep "$(DOCKER_TAG)")
+DOCKER_CONTS  := $$(docker ps -a | grep "$(DOCKER_TAG)" | cut -d' ' -f1 | xargs)
 
 
-.DEFAULT all: nginx
+.DEFAULT all: docker
 
-nginx: | $(NGINX_ROOT) $(NGINX_MAKEFILE)
-	make -C "$(NGINX_ROOT)"
+docker:
+    ifeq ("","$(DOCKER_IMGS)")
+	@docker rmi "$(DOCKER_TAG)"
+    endif
+	@docker build -t "$(DOCKER_TAG):latest" $(DOCKER)
 
-$(NGINX_ROOT):
-	rm -rf "$(NGINX_ROOT)" && mkdir -p "$(NGINX_ROOT)"
-	wget -O- "$(NGINX_SRC_URL)" | tar xzC "$(NGINX_ROOT)" --strip-components 1
+run:
+	@docker run -d -p 80:80 "$(DOCKER_TAG):latest"
 
-modules: | $(MOD_PS_ROOT)
-$(MOD_PS_ROOT):
-	rm -rf "$(MOD_PS_ROOT)" && mkdir -p "$(MOD_PS_ROOT)"
-	wget -O- "$(MOD_PS_SRC_URL)" | tar xzC "$(MOD_PS_ROOT)" --strip-components 1
+run-ssl:
+	@docker run -d -p 80:80 -p 443:443 "$(DOCKER_TAG):latest"
 
-$(NGINX_MAKEFILE): | $(NGINX_ROOT) modules
-	#  --add-module=../ngx_postgres_module \
-	cd "$(NGINX_ROOT)"; ./configure \
-		--prefix=/usr/share/nginx \
-		--sbin-path=/usr/sbin/nginx \
-		--conf-path=/etc/nginx/nginx.conf \
-		--error-log-path=/var/log/nginx/error.log \
-		--http-log-path=/var/log/nginx/access.log \
-		--http-client-body-temp-path=/var/lib/nginx/tmp/client_body \
-		--http-proxy-temp-path=/var/lib/nginx/tmp/proxy \
-		--http-fastcgi-temp-path=/var/lib/nginx/tmp/fastcgi \
-		--http-uwsgi-temp-path=/var/lib/nginx/tmp/uwsgi \
-		--http-scgi-temp-path=/var/lib/nginx/tmp/scgi \
-		--pid-path=/var/run/nginx.pid \
-		--lock-path=/var/lock/subsys/nginx \
-		--user=nginx \
-		--group=nginx \
-		--with-file-aio \
-		--with-ipv6 \
-		--with-http_ssl_module \
-		--with-http_gunzip_module \
-		--with-http_gzip_static_module \
-		--with-google_perftools_module \
-		--with-pcre \
-		--with-http_auth_request_module \
-		--add-module=../$(MOD_PS_ROOT) \
-		--with-debug \
-		--with-cc-opt='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4 -m64 -mtune=generic' \
-		--with-ld-opt=' -Wl,-E'
+show:
+	@docker images
+	@echo ----------------------------------------------------------------------------------------------------
+	@docker ps -a
 
+term join:
+	# enter our container interactively
+	@docker exec -it $$(docker ps | grep "$(DOCKER_TAG)" | cut -d' ' -f1) /bin/bash
 
-.PHONY: all nginx modules
+stop:
+	# stop our running containers
+	@docker stop $$(docker ps | grep "$(DOCKER_TAG)" | cut -d' ' -f1 | xargs)
+
+clean:
+	# delete our containers (running or stopped)
+    ifneq ("","$(DOCKER_CONTS)")
+	@docker rm -f $(DOCKER_CONTS)
+    endif
+
+distclean: clean
+    ifneq ("","$(DOCKER_IMGS)")
+	@docker rmi "$(DOCKER_TAG)"
+    endif
+
+.PHONY: all docker run run-ssl show term join stop clean distclean
+
