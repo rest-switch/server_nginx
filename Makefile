@@ -16,49 +16,57 @@
 # Author: John Clark (johnc@restswitch.com)
 #
 
-DOCKER        := docker
-DOCKER_TAG    := restswitch/server_nginx
-DOCKER_IMGS   := $$(docker images | grep "$(DOCKER_TAG)")
-DOCKER_CONTS  := $$(docker ps -a | grep "$(DOCKER_TAG)" | cut -d' ' -f1 | xargs)
+DOCKER           := docker
+DOCKER_TAG       := restswitch/server_nginx
+DOCKER_IMGS      := $$(docker images | grep '$(DOCKER_TAG)')
+DOCKER_CNTS_ALL  := $$(docker ps -a | grep '$(DOCKER_TAG)' | cut -d' ' -f1 | xargs)
+DOCKER_CNTS_RUN  := $$(docker ps | grep '$(DOCKER_TAG)' | cut -d' ' -f1 | xargs | rev | cut -d' ' -f1 | rev)
 
 
 .DEFAULT all: docker
 
 docker:
-    ifeq ("","$(DOCKER_IMGS)")
-	@docker rmi "$(DOCKER_TAG)"
-    endif
+	@if [ -z "$(DOCKER_IMGS)" ]; then \
+		echo "removing exising images with tag: $(DOCKER_TAG)"; \
+		docker rmi "$(DOCKER_TAG)"; \
+	fi
 	@docker build -t "$(DOCKER_TAG):latest" $(DOCKER)
 
 run:
-	@docker run -d -p 80:80 "$(DOCKER_TAG):latest"
-
-run-ssl:
-	@docker run -d -p 80:80 -p 443:443 "$(DOCKER_TAG):latest"
+	@if [ -z "$(DOCKER_CNTS_RUN)" ]; then \
+		echo "starting container: $(DOCKER_TAG)"; \
+		docker run -d -p 80:80 -p 443:443 "$(DOCKER_TAG):latest"; \
+	else \
+		echo "found running container: $(DOCKER_CNTS_RUN)"; \
+	fi
 
 show:
 	@docker images
-	@echo ----------------------------------------------------------------------------------------------------
+	@echo "----------------------------------------------------------------------------------------------------"
 	@docker ps -a
 
-term join:
-	# enter our container interactively
-	@docker exec -it $$(docker ps | grep "$(DOCKER_TAG)" | cut -d' ' -f1) /bin/bash
+term shell join: run
+	# enter container interactively
+	@docker exec -it "$(DOCKER_CNTS_RUN)" /bin/bash
 
 stop:
-	# stop our running containers
-	@docker stop $$(docker ps | grep "$(DOCKER_TAG)" | cut -d' ' -f1 | xargs)
+	@if [ -z "$(DOCKER_CNTS_RUN)" ]; then \
+		echo "no containers to stop"; \
+	else \
+		echo "stopping running container(s): $(DOCKER_CNTS_RUN)"; \
+		docker stop "$(DOCKER_CNTS_RUN)"; \
+	fi
 
 clean:
 	# delete our containers (running or stopped)
-    ifneq ("","$(DOCKER_CONTS)")
-	@docker rm -f $(DOCKER_CONTS)
-    endif
+	@if [ ! -z "$(DOCKER_CNTS_ALL)" ]; then \
+		docker rm -f $(DOCKER_CNTS_ALL); \
+	fi
 
 distclean: clean
-    ifneq ("","$(DOCKER_IMGS)")
-	@docker rmi "$(DOCKER_TAG)"
-    endif
+	@if [ ! -z "$(DOCKER_IMGS)" ]; then \
+		docker rmi "$(DOCKER_TAG)"; \
+	fi
 
-.PHONY: all docker run run-ssl show term join stop clean distclean
+.PHONY: all docker run run-ssl show term shell join stop clean distclean
 
