@@ -28,6 +28,8 @@ all docker:
 		echo "removing exising images with tag: $(DOCKER_TAG)"; \
 		docker rmi "$(DOCKER_TAG)"; \
 	fi
+	@if [ ! -f "$(DOCKER)/cert-chain-public.pem" ]; then touch "$(DOCKER)/cert-chain-public.pem"; fi
+	@if [ ! -f "$(DOCKER)/cert-private.pem" ]; then touch "$(DOCKER)/cert-private.pem"; fi
 	@docker build -t "$(DOCKER_TAG):latest" $(DOCKER)
 
 run:
