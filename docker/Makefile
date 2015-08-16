@@ -24,12 +24,12 @@ NGINX_STOCK     := $(shell which nginx)
 MOD_PS_SRC_URL  := https://github.com/wandenberg/nginx-push-stream-module/archive/master.tar.gz
 MOD_PS_ROOT     := ngx_http_push_stream_module
 
+ifneq ($(shell cat /proc/self/cgroup | grep -q docker ; echo $$?),0)
+    $(error not running in a docker container)
+endif
 
-.DEFAULT all: nginx
-
-nginx: | $(NGINX_ROOT) $(NGINX_MAKEFILE)
+all nginx: | $(NGINX_ROOT) $(NGINX_MAKEFILE)
 	make -C "$(NGINX_ROOT)"
-#	cp "$(NGINX)" "/usr/sbin"
 	cp "$(NGINX)" "$(NGINX_STOCK)"
 
 $(NGINX_ROOT):
@@ -72,4 +72,3 @@ $(NGINX_MAKEFILE): | $(NGINX_ROOT) modules
 		--with-ld-opt=' -Wl,-E'
 
 .PHONY: all nginx modules
-
