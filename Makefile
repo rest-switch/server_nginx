@@ -23,9 +23,7 @@ DOCKER_CNTS_ALL  := $$(docker ps -a | grep '$(DOCKER_TAG)' | cut -d' ' -f1 | xar
 DOCKER_CNTS_RUN  := $$(docker ps | grep '$(DOCKER_TAG)' | cut -d' ' -f1 | xargs | rev | cut -d' ' -f1 | rev)
 
 
-.DEFAULT all: docker
-
-docker:
+all docker:
 	@if [ -z "$(DOCKER_IMGS)" ]; then \
 		echo "removing exising images with tag: $(DOCKER_TAG)"; \
 		docker rmi "$(DOCKER_TAG)"; \
@@ -68,5 +66,5 @@ distclean: clean
 		docker rmi "$(DOCKER_TAG)"; \
 	fi
 
-.PHONY: all docker run run-ssl show term shell join stop clean distclean
+.PHONY: all docker run show term shell join stop clean distclean
 
