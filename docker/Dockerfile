@@ -19,8 +19,10 @@
 FROM centos:centos7
 MAINTAINER John Clark <johnc@restswitch.com>
 
+
 # update and install
-RUN yum -y update && yum -y install epel-release tar wget ; yum clean all
+ENV TERM xterm
+RUN yum -y update && yum -y install epel-release tar wget nano ; yum clean all
 RUN yum -y update && yum -y install gcc make google-perftools-devel openssl-devel pcre-devel nginx ; yum clean all
 
 # nginx conf
