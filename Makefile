@@ -18,26 +18,24 @@
 
 DOCKER           := docker
 DOCKER_TAG       := restswitch/server_nginx
-DOCKER_IMGS      := $$(docker images | grep '$(DOCKER_TAG)')
-DOCKER_CNTS_ALL  := $$(docker ps -a | grep '$(DOCKER_TAG)' | cut -d' ' -f1 | xargs)
-DOCKER_CNTS_RUN  := $$(docker ps | grep '$(DOCKER_TAG)' | cut -d' ' -f1 | xargs | rev | cut -d' ' -f1 | rev)
+DOCKER_IMG       := $$(docker images | grep '$(DOCKER_TAG)')
+DOCKER_CNT_ALL   := $$(docker ps -a | grep '$(DOCKER_TAG)' | cut -d' ' -f1 | xargs)
+DOCKER_CNT_RUN   := $$(docker ps | grep '$(DOCKER_TAG)' | cut -d' ' -f1 | xargs | cut -d' ' -f1)
+DOCKER_CNT_EXIT  := $$(docker ps -a | grep Exited | cut -d' ' -f1 | xargs)
+DOCKER_CNT_DANG  := $$(docker images -qf "dangling=true" | xargs)
 
 
-all docker:
-	@if [ -z "$(DOCKER_IMGS)" ]; then \
-		echo "removing exising images with tag: $(DOCKER_TAG)"; \
-		docker rmi "$(DOCKER_TAG)"; \
-	fi
+all docker: tidy
 	@if [ ! -f "$(DOCKER)/cert-chain-public.pem" ]; then touch "$(DOCKER)/cert-chain-public.pem"; fi
 	@if [ ! -f "$(DOCKER)/cert-private.pem" ]; then touch "$(DOCKER)/cert-private.pem"; fi
 	@docker build -t "$(DOCKER_TAG):latest" $(DOCKER)
 
 run:
-	@if [ -z "$(DOCKER_CNTS_RUN)" ]; then \
+	@if [ -z "$(DOCKER_CNT_RUN)" ]; then \
 		echo "starting container: $(DOCKER_TAG)"; \
 		docker run -d -p 80:80 -p 443:443 "$(DOCKER_TAG):latest"; \
 	else \
-		echo "found running container: $(DOCKER_CNTS_RUN)"; \
+		echo "found running container: $(DOCKER_CNT_RUN)"; \
 	fi
 
 show:
@@ -47,26 +45,35 @@ show:
 
 term shell join: run
 	# enter container interactively
-	@docker exec -it "$(DOCKER_CNTS_RUN)" /bin/bash
+	@docker exec -it $(DOCKER_CNT_RUN) /bin/bash
 
 stop:
-	@if [ -z "$(DOCKER_CNTS_RUN)" ]; then \
-		echo "no containers to stop"; \
-	else \
-		echo "stopping running container(s): $(DOCKER_CNTS_RUN)"; \
-		docker stop "$(DOCKER_CNTS_RUN)"; \
+	@if [ ! -z "$(DOCKER_CNT_RUN)" ]; then \
+		echo "stopping running container(s): $(DOCKER_CNT_RUN)"; \
+		docker stop $(DOCKER_CNT_RUN); \
 	fi
 
-clean:
+tidy: stop
+	# remove all stopped containers
+	@if [ ! -z "$(DOCKER_CNT_EXIT)" ]; then \
+		docker rm $(DOCKER_CNT_EXIT); \
+	fi
+
+	# clean up un-tagged docker images
+	@if [ ! -z "$(DOCKER_CNT_DANG)" ]; then \
+		docker rmi $(DOCKER_CNT_DANG); \
+	fi
+
+clean: tidy
 	# delete our containers (running or stopped)
-	@if [ ! -z "$(DOCKER_CNTS_ALL)" ]; then \
-		docker rm -f $(DOCKER_CNTS_ALL); \
+	@if [ ! -z "$(DOCKER_CNT_ALL)" ]; then \
+		docker rm -f $(DOCKER_CNT_ALL); \
 	fi
 
 distclean: clean
-	@if [ ! -z "$(DOCKER_IMGS)" ]; then \
-		docker rmi "$(DOCKER_TAG)"; \
+	@if [ ! -z "$(DOCKER_IMG)" ]; then \
+		docker rmi -f $(DOCKER_IMG); \
 	fi
 
-.PHONY: all docker run show term shell join stop clean distclean
+.PHONY: all docker run show term shell join stop tidy clean distclean
 
