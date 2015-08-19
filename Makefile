@@ -18,22 +18,27 @@
 
 DOCKER           := docker
 DOCKER_TAG       := restswitch/server_nginx
-DOCKER_IMG       := $$(docker images | grep '$(DOCKER_TAG)')
-DOCKER_CNT_ALL   := $$(docker ps -a | grep '$(DOCKER_TAG)' | cut -d' ' -f1 | xargs)
-DOCKER_CNT_RUN   := $$(docker ps | grep '$(DOCKER_TAG)' | cut -d' ' -f1 | xargs | cut -d' ' -f1)
-DOCKER_CNT_EXIT  := $$(docker ps -a | grep Exited | cut -d' ' -f1 | xargs)
-DOCKER_CNT_DANG  := $$(docker images -qf "dangling=true" | xargs)
+DOCKER_IMG_ALL   := $$(docker images | grep '$(DOCKER_TAG)' | awk '{print $$3}')
+DOCKER_IMG_LVER  := $$(docker images | grep '$(DOCKER_TAG)' | awk '{print $$2}' | sort -rn | head -n1)
+DOCKER_IMG_OLD   := $$(docker images | grep '$(DOCKER_TAG)' | awk '{print $$2}' | sort -rn | tail -n+2)
+DOCKER_CNT_ALL   := $$(docker ps -a | grep '$(DOCKER_TAG)' | awk '{print $$1}')
+DOCKER_CNT_RUN   := $$(docker ps | grep '$(DOCKER_TAG)' | awk '{print $$1}')
+DOCKER_CNT_EXIT  := $$(docker ps -a | grep '$(DOCKER_TAG)' | grep Exited | awk '{print $$1}')
+DOCKER_CNT_DANG  := $$(docker images -qf "dangling=true")
+#VER              := $$(echo $$(test -f VERSION && echo $$(($$(cat VERSION)+1)) || echo 1) > VERSION; echo $$(cat VERSION))
+VER              := $$(echo $$(($$(cat VERSION 2>/dev/null || echo 100)+1)) > VERSION; echo $$(cat VERSION))
 
 
-all docker: tidy
+all docker:
 	@if [ ! -f "$(DOCKER)/cert-chain-public.pem" ]; then touch "$(DOCKER)/cert-chain-public.pem"; fi
 	@if [ ! -f "$(DOCKER)/cert-private.pem" ]; then touch "$(DOCKER)/cert-private.pem"; fi
-	@docker build -t "$(DOCKER_TAG):latest" $(DOCKER)
+	@docker build -t "$(DOCKER_TAG):$(VER)" "$(DOCKER)"
+	@docker tag "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"
 
 run:
 	@if [ -z "$(DOCKER_CNT_RUN)" ]; then \
-		echo "starting container: $(DOCKER_TAG)"; \
-		docker run -d -p 80:80 -p 443:443 "$(DOCKER_TAG):latest"; \
+		echo "starting container: $(DOCKER_TAG):$(DOCKER_IMG_LVER)"; \
+		docker run -d -p 80:80 -p 443:443 "$(DOCKER_TAG):$(DOCKER_IMG_LVER)"; \
 	else \
 		echo "found running container: $(DOCKER_CNT_RUN)"; \
 	fi
@@ -52,8 +57,9 @@ stop:
 		echo "stopping running container(s): $(DOCKER_CNT_RUN)"; \
 		docker stop $(DOCKER_CNT_RUN); \
 	fi
+	$(MAKE) tidy
 
-tidy: stop
+tidy:
 	# remove all stopped containers
 	@if [ ! -z "$(DOCKER_CNT_EXIT)" ]; then \
 		docker rm $(DOCKER_CNT_EXIT); \
@@ -64,16 +70,24 @@ tidy: stop
 		docker rmi $(DOCKER_CNT_DANG); \
 	fi
 
-clean: tidy
+clean: stop
 	# delete our containers (running or stopped)
 	@if [ ! -z "$(DOCKER_CNT_ALL)" ]; then \
 		docker rm -f $(DOCKER_CNT_ALL); \
 	fi
 
-distclean: clean
-	@if [ ! -z "$(DOCKER_IMG)" ]; then \
-		docker rmi -f $(DOCKER_IMG); \
+	# delete old images (preserve the latest)
+	@for ver in $(DOCKER_IMG_OLD); do \
+		echo "removing docker image: $(DOCKER_TAG):$${ver}"; \
+		docker rmi $(DOCKER_TAG):$${ver}; \
+	done
+	@docker tag "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"
+
+distclean: stop clean
+	@if [ ! -z "$(DOCKER_IMG_ALL)" ]; then \
+		docker rmi -f $(DOCKER_IMG_ALL); \
 	fi
+
 
 .PHONY: all docker run show term shell join stop tidy clean distclean
 
