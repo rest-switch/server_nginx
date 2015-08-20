@@ -33,7 +33,7 @@ all docker:
 	@if [ ! -f "$(DOCKER)/cert-chain-public.pem" ]; then touch "$(DOCKER)/cert-chain-public.pem"; fi
 	@if [ ! -f "$(DOCKER)/cert-private.pem" ]; then touch "$(DOCKER)/cert-private.pem"; fi
 	@docker build -t "$(DOCKER_TAG):$(VER)" "$(DOCKER)"
-	@docker tag "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"
+	@docker tag -f "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"
 
 run:
 	@if [ -z "$(DOCKER_CNT_RUN)" ]; then \
