@@ -37,8 +37,8 @@ all docker:
 
 run:
 	@if [ -z "$(DOCKER_CNT_RUN)" ]; then \
-		echo "starting container: $(DOCKER_TAG):$(DOCKER_IMG_LVER)"; \
-		docker run -d -p 80:80 -p 443:443 "$(DOCKER_TAG):$(DOCKER_IMG_LVER)"; \
+		echo "starting container: $(DOCKER_TAG):latest"; \
+		docker run -d -p 80:80 -p 443:443 "$(DOCKER_TAG):latest"; \
 	else \
 		echo "found running container: $(DOCKER_CNT_RUN)"; \
 	fi
@@ -81,7 +81,7 @@ clean: stop
 		echo "removing docker image: $(DOCKER_TAG):$${ver}"; \
 		docker rmi $(DOCKER_TAG):$${ver}; \
 	done
-	@docker tag "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"
+	@docker tag -f "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"
 
 distclean: stop clean
 	@if [ ! -z "$(DOCKER_IMG_ALL)" ]; then \
