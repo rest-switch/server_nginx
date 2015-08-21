@@ -23,12 +23,14 @@ NGINX           := $(NGINX_ROOT)/objs/nginx
 NGINX_STOCK     := $(shell which nginx)
 MOD_PS_SRC_URL  := https://github.com/wandenberg/nginx-push-stream-module/archive/master.tar.gz
 MOD_PS_ROOT     := ngx_http_push_stream_module
+WWW_CP_SRC_URL  := https://github.com/rest-switch/client_www_cp/archive/master.tar.gz
 
 ifneq ($(shell cat /proc/self/cgroup | grep -q docker ; echo $$?),0)
     $(error not running in a docker container)
 endif
 
-all nginx: | $(NGINX_ROOT) $(NGINX_MAKEFILE)
+
+all nginx: | $(NGINX_ROOT) $(NGINX_MAKEFILE) www_cp
 	make -C "$(NGINX_ROOT)"
 	cp "$(NGINX)" "$(NGINX_STOCK)"
 
@@ -71,4 +73,26 @@ $(NGINX_MAKEFILE): | $(NGINX_ROOT) modules
 		--with-cc-opt='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4 -m64 -mtune=generic' \
 		--with-ld-opt=' -Wl,-E'
 
-.PHONY: all nginx modules
+www_cp:
+	@rm -rf /usr/share/nginx/html && mkdir -p /usr/share/nginx/html/secure
+	@chown -R root:nginx /usr/share/nginx/html && chmod -R 750 /usr/share/nginx/html
+	@wget -O- $(WWW_CP_SRC_URL) | tar --strip-components=1 -xzvC /usr/share/nginx/html/secure
+
+	@echo '#!/bin/sh' > /etc/nginx/conf.d/make_pass.sh
+	@echo >> /etc/nginx/conf.d/make_pass.sh
+	@echo 'USER="myuser"' >> /etc/nginx/conf.d/make_pass.sh
+	@echo 'PASS="mypass"' >> /etc/nginx/conf.d/make_pass.sh
+	@echo 'FILE="passwd"' >> /etc/nginx/conf.d/make_pass.sh
+	@echo >> /etc/nginx/conf.d/make_pass.sh
+	@echo 'CRYPT=$$(openssl passwd "$${PASS}")' >> /etc/nginx/conf.d/make_pass.sh
+	@echo >> /etc/nginx/conf.d/make_pass.sh
+	@echo 'rm -rf "$${FILE}" && touch "$${FILE}"' >> /etc/nginx/conf.d/make_pass.sh
+	@echo 'chown root:nginx "$${FILE}" && chmod 640 "$${FILE}"' >> /etc/nginx/conf.d/make_pass.sh
+	@echo 'echo "$${USER}:$${CRYPT}" > "$${FILE}"' >> /etc/nginx/conf.d/make_pass.sh
+	@echo >> /etc/nginx/conf.d/make_pass.sh
+
+	@chmod 700 /etc/nginx/conf.d/make_pass.sh
+	@cd /etc/nginx/conf.d && ./make_pass.sh
+
+.PHONY: all nginx modules www_cp
+
