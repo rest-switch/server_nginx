@@ -40,9 +40,6 @@ RUN chown root:nginx /etc/nginx/conf.d/certs/cert-private.pem && chmod 640 /etc/
 # nginx build
 RUN mkdir -p /tmp/docker
 ADD Makefile /tmp/docker/Makefile
-RUN curl https://git.centos.org/sources/httpd/c7/acf5cccf4afaecf3afeb18c50ae59fd5c6504910 \
-    | tar -xz -C /usr/share/nginx/html --strip-components=1
-RUN sed -i -e 's/Apache/nginx/g' -e '/apache_pb.gif/d' /usr/share/nginx/html/index.html
 RUN make -C /tmp/docker ; rm -rf /tmp/docker
 
 # run
