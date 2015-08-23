@@ -35,3 +35,4 @@
 *.pem
 VERSION
 nginx
+*.tar.xz
