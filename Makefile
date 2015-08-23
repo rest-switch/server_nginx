@@ -24,11 +24,10 @@ NGINX             := $(DOCKER)/nginx
 DOCKER_IMG_ALL    := $$(docker images | grep '^$(DOCKER_TAG)[[:space:]]' | awk '{print $$3}')
 DOCKER_IMG_LVER   := $$(docker images | grep '^$(DOCKER_TAG)[[:space:]]' | awk '{print $$2}' | sort -rn | head -n1)
 DOCKER_IMG_OLD    := $$(docker images | grep '^$(DOCKER_TAG)[[:space:]]' | awk '{print $$2}' | sort -rn | tail -n+2)
-DOCKER_IMG_UNTAG  := $$(docker images | grep '^<none>[[:space:]]*<none>' | awk '{print $$3}')
+DOCKER_IMG_UNTAG  := $$(docker images -qf "dangling=true")
 DOCKER_CNT_ALL    := $$(docker ps -a | grep '$(DOCKER_TAG):' | awk '{print $$1}')
 DOCKER_CNT_RUN    := $$(docker ps | grep '$(DOCKER_TAG):' | awk '{print $$1}')
-DOCKER_CNT_EXIT   := $$(docker ps -a | grep '$(DOCKER_TAG):' | grep Exited | awk '{print $$1}')
-DOCKER_CNT_DANG   := $$(docker images -qf "dangling=true")
+DOCKER_CNT_EXIT   := $$(docker ps -f 'status=exited' | grep '$(DOCKER_TAG):' | awk '{print $$1}')
 #VER               := $$(echo $$(test -f VERSION && echo $$(($$(cat VERSION)+1)) || echo 1) > VERSION; echo $$(cat VERSION))
 VER               := $$(echo $$(($$(cat VERSION 2>/dev/null || echo 100)+1)) > VERSION; echo $$(cat VERSION))
 
@@ -74,11 +73,6 @@ tidy:
 	# remove all stopped containers
 	@if [ ! -z "$(DOCKER_CNT_EXIT)" ]; then \
 		docker rm -f $(DOCKER_CNT_EXIT); \
-	fi
-
-	# clean up un-tagged docker images
-	@if [ ! -z "$(DOCKER_CNT_DANG)" ]; then \
-		docker rmi -f $(DOCKER_CNT_DANG); \
 	fi
 
 	# delete untagged images
