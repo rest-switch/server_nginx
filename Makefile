@@ -16,20 +16,24 @@
 # Author: John Clark (johnc@restswitch.com)
 #
 
-DOCKER           := docker
-DOCKER_TAG       := restswitch/server_nginx
-DOCKER_IMG_ALL   := $$(docker images | grep '$(DOCKER_TAG)' | awk '{print $$3}')
-DOCKER_IMG_LVER  := $$(docker images | grep '$(DOCKER_TAG)' | awk '{print $$2}' | sort -rn | head -n1)
-DOCKER_IMG_OLD   := $$(docker images | grep '$(DOCKER_TAG)' | awk '{print $$2}' | sort -rn | tail -n+2)
-DOCKER_CNT_ALL   := $$(docker ps -a | grep '$(DOCKER_TAG)' | awk '{print $$1}')
-DOCKER_CNT_RUN   := $$(docker ps | grep '$(DOCKER_TAG)' | awk '{print $$1}')
-DOCKER_CNT_EXIT  := $$(docker ps -a | grep '$(DOCKER_TAG)' | grep Exited | awk '{print $$1}')
-DOCKER_CNT_DANG  := $$(docker images -qf "dangling=true")
-#VER              := $$(echo $$(test -f VERSION && echo $$(($$(cat VERSION)+1)) || echo 1) > VERSION; echo $$(cat VERSION))
-VER              := $$(echo $$(($$(cat VERSION 2>/dev/null || echo 100)+1)) > VERSION; echo $$(cat VERSION))
+DOCKER            := docker
+DOCKER_TAG        := restswitch/server_nginx
+DOCKER_BUILD      := $(DOCKER)/docker_build
+DOCKER_BUILD_TAG  := restswitch/server_nginx_build
+NGINX             := $(DOCKER)/nginx
+DOCKER_IMG_ALL    := $$(docker images | grep '^$(DOCKER_TAG)[[:space:]]' | awk '{print $$3}')
+DOCKER_IMG_LVER   := $$(docker images | grep '^$(DOCKER_TAG)[[:space:]]' | awk '{print $$2}' | sort -rn | head -n1)
+DOCKER_IMG_OLD    := $$(docker images | grep '^$(DOCKER_TAG)[[:space:]]' | awk '{print $$2}' | sort -rn | tail -n+2)
+DOCKER_IMG_UNTAG  := $$(docker images | grep '^<none>[[:space:]]*<none>' | awk '{print $$3}')
+DOCKER_CNT_ALL    := $$(docker ps -a | grep '$(DOCKER_TAG):' | awk '{print $$1}')
+DOCKER_CNT_RUN    := $$(docker ps | grep '$(DOCKER_TAG):' | awk '{print $$1}')
+DOCKER_CNT_EXIT   := $$(docker ps -a | grep '$(DOCKER_TAG):' | grep Exited | awk '{print $$1}')
+DOCKER_CNT_DANG   := $$(docker images -qf "dangling=true")
+#VER               := $$(echo $$(test -f VERSION && echo $$(($$(cat VERSION)+1)) || echo 1) > VERSION; echo $$(cat VERSION))
+VER               := $$(echo $$(($$(cat VERSION 2>/dev/null || echo 100)+1)) > VERSION; echo $$(cat VERSION))
 
 
-all docker:
+all docker: nginx stop
 	@if [ ! -f "$(DOCKER)/cert-chain-public.pem" ]; then touch "$(DOCKER)/cert-chain-public.pem"; fi
 	@if [ ! -f "$(DOCKER)/cert-private.pem" ]; then touch "$(DOCKER)/cert-private.pem"; fi
 	@docker build -t "$(DOCKER_TAG):$(VER)" "$(DOCKER)"
@@ -42,6 +46,13 @@ run:
 	else \
 		echo "found running container: $(DOCKER_CNT_RUN)"; \
 	fi
+
+nginx: | $(NGINX)
+$(NGINX):
+	docker build -t "$(DOCKER_BUILD_TAG)" "$(DOCKER_BUILD)"
+	docker run -it "$(DOCKER_BUILD_TAG)"
+	docker cp $$(docker ps -a | grep "$(DOCKER_BUILD_TAG)" | awk '{print $$1}' | head -n1):/home/buildd/nginx $(DOCKER)
+	-docker rm -f $$(docker ps -a | grep '$(DOCKER_BUILD_TAG)' | awk '{print $$1}')
 
 show:
 	@docker images
@@ -62,12 +73,17 @@ stop:
 tidy:
 	# remove all stopped containers
 	@if [ ! -z "$(DOCKER_CNT_EXIT)" ]; then \
-		docker rm $(DOCKER_CNT_EXIT); \
+		docker rm -f $(DOCKER_CNT_EXIT); \
 	fi
 
 	# clean up un-tagged docker images
 	@if [ ! -z "$(DOCKER_CNT_DANG)" ]; then \
-		docker rmi $(DOCKER_CNT_DANG); \
+		docker rmi -f $(DOCKER_CNT_DANG); \
+	fi
+
+	# delete untagged images
+	@if [ ! -z "$(DOCKER_IMG_UNTAG)" ]; then \
+		docker rmi -f $(DOCKER_IMG_UNTAG); \
 	fi
 
 clean: stop
@@ -79,15 +95,23 @@ clean: stop
 	# delete old images (preserve the latest)
 	@for ver in $(DOCKER_IMG_OLD); do \
 		echo "removing docker image: $(DOCKER_TAG):$${ver}"; \
-		docker rmi $(DOCKER_TAG):$${ver}; \
+		docker rmi -f $(DOCKER_TAG):$${ver}; \
 	done
 	@docker tag -f "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"
+
+	# delete untagged images
+	@if [ ! -z "$(DOCKER_IMG_UNTAG)" ]; then \
+		docker rmi -f $(DOCKER_IMG_UNTAG); \
+	fi
 
 distclean: stop clean
 	@if [ ! -z "$(DOCKER_IMG_ALL)" ]; then \
 		docker rmi -f $(DOCKER_IMG_ALL); \
 	fi
 
+	@if [ ! -z $$(docker images | grep '$(DOCKER_BUILD_TAG)') ]; then \
+		docker rmi -f $$(docker images | grep '$(DOCKER_BUILD_TAG)' | awk '{print $$3}'); \
+	fi
 
-.PHONY: all docker run show term shell join stop tidy clean distclean
+.PHONY: all docker run nginx show term shell join stop tidy clean distclean
 

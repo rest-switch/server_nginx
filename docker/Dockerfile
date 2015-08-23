@@ -19,15 +19,23 @@
 FROM centos:centos7
 MAINTAINER John Clark <johnc@restswitch.com>
 
+RUN yum -y update && yum clean all
+RUN yum -y install epel-release tar wget nano && yum clean all
+RUN yum -y install nginx && yum clean all
 
-# update and install
-ENV TERM xterm
-RUN yum -y update && yum -y install epel-release tar wget nano ; yum clean all
-RUN yum -y update && yum -y install gcc make google-perftools-devel openssl-devel pcre-devel nginx ; yum clean all
-
-# nginx conf
+# nginx and conf
+ADD nginx /usr/sbin/nginx
 ADD nginx.conf /etc/nginx/nginx.conf
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf
+ADD make_pass.sh /etc/nginx/conf.d/make_pass.sh
+
+# nginx html
+RUN \
+  rm -rf /usr/share/nginx/html && \
+  mkdir -p /usr/share/nginx/html/secure && \
+  wget -O- https://github.com/rest-switch/client_www_cp/archive/master.tar.gz | tar --strip-components=1 -xzvC /usr/share/nginx/html/secure && \
+  chown -R root:nginx /usr/share/nginx/html && \
+  chmod -R u+rwX,g+rX-w,o-rwx /usr/share/nginx/html
 
 # nginx certs
 RUN mkdir -p /etc/nginx/conf.d/certs && chown root:nginx /etc/nginx/conf.d/certs && chmod 750 /etc/nginx/conf.d/certs
@@ -37,11 +45,8 @@ RUN chown root:nginx /etc/nginx/conf.d/certs/cert-chain-public.pem && chmod 640 
 ADD cert-private.pem /etc/nginx/conf.d/certs/cert-private.pem
 RUN chown root:nginx /etc/nginx/conf.d/certs/cert-private.pem && chmod 640 /etc/nginx/conf.d/certs/cert-private.pem
 
-# nginx build
-RUN mkdir -p /tmp/docker
-ADD Makefile /tmp/docker/Makefile
-RUN make -C /tmp/docker ; rm -rf /tmp/docker
-
 # run
+ENV TERM xterm
 EXPOSE 80 443
 CMD [ "/usr/sbin/nginx" ]
+
