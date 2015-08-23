@@ -46,6 +46,20 @@ run:
 		echo "found running container: $(DOCKER_CNT_RUN)"; \
 	fi
 
+deploy:
+	@echo "deploying the latest docker image, please wait..."
+	@if [ -z $$(which pv) ]; then \
+		echo; \
+		echo "   (this may take a couple of minutes, install pv to get a progress indicator)"; \
+		echo; \
+		docker save '$(DOCKER_TAG):latest' | \
+			xz -z > "restswitch_web_docker_$$(docker images | grep '^$(DOCKER_TAG)[[:space:]]*latest' | awk '{print $$3}').tar.xz"; \
+	else \
+		docker save '$(DOCKER_TAG):latest' | \
+			pv -s $$(docker inspect '$(DOCKER_TAG):latest' | grep VirtualSize | awk '{printf "%.0f", $$2 * 1.04}') | \
+			xz -z > "restswitch_web_docker_$$(docker images | grep '^$(DOCKER_TAG)[[:space:]]*latest' | awk '{print $$3}').tar.xz"; \
+	fi
+
 nginx: | $(NGINX)
 $(NGINX):
 	docker build -t "$(DOCKER_BUILD_TAG)" "$(DOCKER_BUILD)"
@@ -107,5 +121,5 @@ distclean: stop clean
 		docker rmi -f $$(docker images | grep '$(DOCKER_BUILD_TAG)' | awk '{print $$3}'); \
 	fi
 
-.PHONY: all docker run nginx show term shell join stop tidy clean distclean
+.PHONY: all docker run deploy nginx show term shell join stop tidy clean distclean
 
