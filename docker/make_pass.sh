@@ -22,7 +22,7 @@ USERID="$1"
 PASSWD="$2"
 if [ -z $USERID ] || [ -z $PASSWD ]; then
     echo
-    echo "usage: $0 <userid> <password>"
+    echo "usage: $(basename $0) <userid> <password>"
     echo
     exit 1
 fi
