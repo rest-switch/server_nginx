@@ -30,12 +30,12 @@ RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 ADD make_pass.sh /etc/nginx/conf.d/make_pass.sh
 
 # nginx html
+RUN rm -rf /usr/share/nginx/html
 RUN \
-  rm -rf /usr/share/nginx/html && \
-  mkdir -p /usr/share/nginx/html/secure && \
-  wget -O- https://github.com/rest-switch/client_www_cp/archive/master.tar.gz | tar --strip-components=1 -xzvC /usr/share/nginx/html/secure && \
-  chown -R root:nginx /usr/share/nginx/html && \
-  chmod -R u+rwX,g+rX-w,o-rwx /usr/share/nginx/html
+  mkdir -p /var/www/restswitch/secure && \
+  wget -O- https://github.com/rest-switch/client_www_cp/archive/master.tar.gz | tar --strip-components=1 -xzvC /var/www/restswitch/secure && \
+  chown -R root:nginx /var/www/restswitch && \
+  chmod -R u+rwX,g+rX-w,o-rwx /var/www/restswitch
 
 # nginx certs
 RUN mkdir -p /etc/nginx/conf.d/certs && chown root:nginx /etc/nginx/conf.d/certs && chmod 750 /etc/nginx/conf.d/certs
