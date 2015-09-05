@@ -87,6 +87,16 @@ term shell join: run
 	# enter container interactively
 	@docker exec -it $(DOCKER_CNT_RUN) /bin/bash
 
+debug:
+	# start a new (or enter a running) container with bash
+	@if [ -z "$(DOCKER_CNT_RUN)" ]; then \
+		echo "starting container: $(DOCKER_TAG):latest"; \
+		@docker run -it "$(DOCKER_TAG):latest" "/bin/bash"; \
+	else \
+		echo "found running container: $(DOCKER_CNT_RUN)"; \
+		@docker exec -it $(DOCKER_CNT_RUN) /bin/bash
+	fi
+
 stop:
 	@if [ ! -z "$(DOCKER_CNT_RUN)" ]; then \
 		echo "stopping running container(s): $(DOCKER_CNT_RUN)"; \
@@ -132,5 +142,5 @@ distclean: stop clean
 		docker rmi -f $$(docker images | grep '$(DOCKER_BUILD_TAG)' | awk '{print $$3}'); \
 	fi
 
-.PHONY: all docker run deploy nginx show term shell join stop tidy clean distclean
+.PHONY: all docker run deploy nginx show term shell join debug stop tidy clean distclean
 
