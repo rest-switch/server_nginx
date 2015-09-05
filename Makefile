@@ -16,6 +16,9 @@
 # Author: John Clark (johnc@restswitch.com)
 #
 
+EXPOSED_HTTP_PORT  = 80
+EXPOSED_HTTPS_PORT = 443
+
 DOCKER            := docker
 DOCKER_TAG        := restswitch/server_nginx
 DOCKER_BUILD      := $(DOCKER)/docker_build
@@ -37,11 +40,15 @@ all docker: nginx stop
 	@if [ ! -f "$(DOCKER)/cert-private.pem" ]; then touch "$(DOCKER)/cert-private.pem"; fi
 	@docker build -t "$(DOCKER_TAG):$(VER)" "$(DOCKER)"
 	@docker tag -f "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"
+	@echo
+	@echo 'docker image now built, use "make deploy" to package the image'
+	@echo 'for running elsewhere, or use "make run" to start the image here'
+	@echo
 
 run:
 	@if [ -z "$(DOCKER_CNT_RUN)" ]; then \
 		echo "starting container: $(DOCKER_TAG):latest"; \
-		docker run -d -p 80:80 -p 443:443 "$(DOCKER_TAG):latest"; \
+		docker run -d -p "$(EXPOSED_HTTP_PORT):80" -p "$(EXPOSED_HTTPS_PORT):443" "$(DOCKER_TAG):latest"; \
 	else \
 		echo "found running container: $(DOCKER_CNT_RUN)"; \
 	fi
@@ -59,6 +66,9 @@ deploy:
 			pv -s $$(docker inspect '$(DOCKER_TAG):latest' | grep VirtualSize | awk '{printf "%.0f", $$2 * 1.04}') | \
 			xz -z > "restswitch_web_docker_$$(docker images | grep '^$(DOCKER_TAG)[[:space:]]*latest' | awk '{print $$3}').tar.xz"; \
 	fi
+	@echo 'docker image packaging now complete'
+	@echo 'use the rs-docker-maint.sh script to help manage the image'
+	@echo
 
 nginx: | $(NGINX)
 $(NGINX):

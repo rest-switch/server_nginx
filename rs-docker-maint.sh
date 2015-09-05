@@ -18,6 +18,10 @@
 #
 
 
+EXPOSED_HTTP_PORT=80
+EXPOSED_HTTPS_PORT=443
+
+
 clean() {
     echo 'stopping and removing restswitch_webserver container...'
     docker rm -f 'restswitch_webserver'
@@ -45,7 +49,7 @@ create() {
     fi
 
     echo 'creating restswitch_webserver container...'
-    docker create $([[ "$autostart" = "auto" ]] && echo '--restart=always') --name 'restswitch_webserver' -p '80:80' -p '443:443' 'restswitch/server_nginx:latest'
+    docker create $([[ "$autostart" = "auto" ]] && echo '--restart=always') --name 'restswitch_webserver' -p "$EXPOSED_HTTP_PORT:80" -p "$EXPOSED_HTTPS_PORT:443" 'restswitch/server_nginx:latest'
 }
 
 load() {
