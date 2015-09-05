@@ -41,8 +41,9 @@ all docker: nginx stop
 	@docker build -t "$(DOCKER_TAG):$(VER)" "$(DOCKER)"
 	@docker tag -f "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"
 	@echo
-	@echo 'docker image now built, use "make deploy" to package the image'
-	@echo 'for running elsewhere, or use "make run" to start the image here'
+	@echo 'the docker image is now built'
+	@echo ' - to run this image locally, run: "make run"'
+	@echo ' - to run this image remotely, run: "make deploy"'
 	@echo
 
 run:
