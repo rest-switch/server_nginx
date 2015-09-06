@@ -21,40 +21,88 @@
 EXPOSED_HTTP_PORT=80
 EXPOSED_HTTPS_PORT=443
 
+DOCKER_IMG_NAME='restswitch/server_nginx'
+DOCKER_CNT_NAME='restswitch_webserver'
+
 
 clean() {
-    echo 'stopping and removing restswitch_webserver container...'
-    docker rm -f 'restswitch_webserver'
+    tidy
+    # delete our containers (running or stopped)
+    echo "stopping and removing containers based on \"${DOCKER_IMG_NAME}\" image..."
+    local docker_cnt_all=$(docker ps -a | grep "${DOCKER_IMG_NAME}:" | awk '{print $1}')
+    if [ ! -z "${docker_cnt_all}" ]; then
+        docker rm -f ${docker_cnt_all}
+    fi
+
+    # delete old images (preserve the latest)
+    local docker_img_old=$(docker images | grep "^${DOCKER_IMG_NAME}[[:space:]]" | awk '{print $2}' | sort -rn | tail -n+2)
+    for ver in ${docker_img_old}; do
+        echo "removing docker image: ${DOCKER_IMG_NAME}:${ver}"
+        docker rmi -f "${DOCKER_IMG_NAME}:${ver}"
+    done
+    local docker_img_lver=$(docker images | grep "^${DOCKER_IMG_NAME}[[:space:]]" | awk '{print $2}' | sort -rn | head -n1)
+    docker tag -f "${DOCKER_IMG_NAME}:${docker_img_lver}" "${DOCKER_IMG_NAME}:latest"
+
+    # delete untagged images
+    local docker_img_untag=$(docker images -qf "dangling=true")
+    if [ ! -z "${docker_img_untag}" ]; then
+        docker rmi -f ${docker_img_untag}
+    fi
 }
 
 create() {
-    autostart=$1
+    local autostart=$1
 
-    is_running=$(docker ps -q -f 'name=restswitch_webserver')
-    if [ ! -z $is_running ]; then
+    local cnt_running=$(docker ps -q -f "name=${DOCKER_CNT_NAME}")
+    if [ ! -z "${cnt_running}" ]; then
         echo
-        echo 'container "restswitch_webserver" is already running'
+        echo "container \"${DOCKER_CNT_NAME}\" is already running"
         echo "please run \"$(basename "$0") stop\" to stop the running container"
         echo
         exit 1
     fi
 
-    is_stopped=$(docker ps -q -f 'name=restswitch_webserver' -f 'status=exited')
-    if [ ! -z $is_stopped ]; then
+    local cnt_stopped=$(docker ps -q -f "name=${DOCKER_CNT_NAME}" -f 'status=exited')
+    if [ ! -z "${cnt_stopped}" ]; then
         echo
-        echo 'container "restswitch_webserver" has already been created but is not running'
+        echo "container \"${DOCKER_CNT_NAME}\" has already been created but is not running"
         echo "please run \"$(basename "$0") clean\" to remove the stopped container"
         echo
         exit 1
     fi
 
-    echo 'creating restswitch_webserver container...'
-    docker create $([[ "$autostart" = "auto" ]] && echo '--restart=always') --name 'restswitch_webserver' -p "$EXPOSED_HTTP_PORT:80" -p "$EXPOSED_HTTPS_PORT:443" 'restswitch/server_nginx:latest'
+    echo "creating ${DOCKER_CNT_NAME} container..."
+    docker create $([[ "$autostart" = "auto" ]] && echo '--restart=always') --name "${DOCKER_CNT_NAME}" -p "$EXPOSED_HTTP_PORT:80" -p "$EXPOSED_HTTPS_PORT:443" "${DOCKER_IMG_NAME}:latest"
+}
+
+debug() {
+    # enter a running, or start a new container with bash
+    local cnt_running=$(docker ps -q -f "name=${DOCKER_CNT_NAME}")
+    if [ -z "${cnt_running}" ]; then
+        echo "starting image: ${DOCKER_IMG_NAME}:latest"
+        docker run -it "${DOCKER_IMG_NAME}:latest" "/bin/bash"
+    else
+        echo "entering running container: ${cnt_running}"
+        docker exec -it ${cnt_running} /bin/bash
+    fi
+}
+
+distclean() {
+    clean
+    local docker_img_all=$(docker images | grep "^${DOCKER_IMG_NAME}" | awk '{print $3}' | sort -u)
+    if [ ! -z "${docker_img_all}" ]; then
+        docker rmi -f ${docker_img_all}
+    fi
+}
+
+enter() {
+    start
+    docker exec -it "${DOCKER_CNT_NAME}" /bin/bash
 }
 
 load() {
-    tarxz_name=$1
-    if [ ! -f ${tarxz_name} ]; then
+    local tarxz_name=$1
+    if [ ! -f "${tarxz_name}" ]; then
         echo 'error: tar.xz archive must be specified'
         exit 2;
     fi
@@ -66,54 +114,63 @@ load() {
     docker images
 }
 
-enter() {
-    start
-    docker exec -it 'restswitch_webserver' /bin/bash
-}
-
 setpass() {
-    userid=$1
-    passwd=$2
-    if [ -z $userid ] || [ -z $passwd ]; then
+    local userid=$1
+    local passwd=$2
+    if [ -z "${userid}" ] || [ -z "${passwd}" ]; then
         echo 'error: userid and password must be specified'
         exit 4;
     fi
-    docker exec -it 'restswitch_webserver' /etc/nginx/conf.d/make_pass.sh $userid $passwd
-    docker exec -it 'restswitch_webserver' pkill -HUP nginx
+    docker exec -it "${DOCKER_CNT_NAME}" "/etc/nginx/conf.d/make_pass.sh" "${userid}" "${passwd}"
+    docker exec -it "${DOCKER_CNT_NAME}" pkill -HUP nginx
 }
 
 show() {
     docker images
-    echo "----------------------------------------------------------------------------------------------------"
+    echo '----------------------------------------------------------------------------------------------------'
     docker ps -a
 }
 
 start() {
-    is_running=$(docker ps -q -f 'name=restswitch_webserver')
-    if [ ! -z $is_running ]; then
+    local cnt_running=$(docker ps -q -f "name=${DOCKER_CNT_NAME}")
+    if [ ! -z "${cnt_running}" ]; then
         echo
-        echo 'container "restswitch_webserver" is already running'
+        echo "container \"${DOCKER_CNT_NAME}\" is already running"
         echo "please run \"$(basename "$0") stop\" to stop the running container"
         echo
         exit 1
     fi
 
-    is_stopped=$(docker ps -q -f 'name=restswitch_webserver' -f 'status=exited')
-    if [ -z $is_stopped ]; then
+    local cnt_stopped=$(docker ps -q -f "name=${DOCKER_CNT_NAME}" -f 'status=exited')
+    if [ -z "${cnt_stopped}" ]; then
         echo
-        echo 'container "restswitch_webserver" does not exist to start'
+        echo "container \"${DOCKER_CNT_NAME}\" does not exist to start"
         echo "please run \"$(basename "$0") create\" to create the container"
         echo
         exit 1
     fi
 
-    echo 'starting restswitch_webserver...'
-    docker start 'restswitch_webserver'
+    echo "starting ${DOCKER_CNT_NAME}..."
+    docker start "${DOCKER_CNT_NAME}"
 }
 
 stop() {
-    echo 'stopping restswitch_webserver...'
-    docker stop 'restswitch_webserver'
+    echo "stopping ${DOCKER_CNT_NAME}..."
+    docker stop "${DOCKER_CNT_NAME}"
+}
+
+tidy() {
+    echo 'removing stopped containers...'
+    local docker_cnt_exit=$(docker ps -f 'status=exited' | grep "${DOCKER_IMG_NAME}" | awk '{print $1}')
+    if [ ! -z "${docker_cnt_exit}" ]; then
+        docker rm -f ${docker_cnt_exit}
+    fi
+
+    echo 'deleting untagged images...'
+    local docker_img_untag=$(docker images -qf 'dangling=true')
+    if [ ! -z "${docker_img_untag}" ]; then
+        docker rmi -f ${docker_img_untag}
+    fi
 }
 
 
@@ -127,14 +184,17 @@ Usage:
  $(basename "$0") <command>
 
 Commands:
- clean                        remove restswitch_webserver docker container
- create [auto]                create [an autostart on boot] restswitch_webserver docker container
- enter                        enter restswitch_webserver interactive shell (will autocreate and start if needed)
- load <tar.xz>                load an image
- setpass <userid> <password>  set credentials for /secure site
- show                         show docker image and container information
- start                        start restswitch_webserver docker container (will autocreate if needed)
- stop                         stop restswitch_webserver docker container
+ clean                    remove everything but the ${DOCKER_CNT_NAME} docker image
+ create [auto]            create [an autostart on boot] ${DOCKER_CNT_NAME} docker container
+ debug                    enter a the running container or start a container using bash
+ distclean                remove everything
+ enter                    enter a running container (will autocreate and start if needed)
+ load <tar.xz>            load an existing image
+ setpass <userid> <pass>  set credentials for /secure website
+ show                     show docker image and container information
+ start                    start ${DOCKER_CNT_NAME} docker container (will autocreate if needed)
+ stop                     stop ${DOCKER_CNT_NAME} docker container
+ tidy                     similar to clean, but does not remove container
 
 EOF
 }
@@ -157,6 +217,12 @@ while [ $# -gt 0 ]; do
         create "${2}"
         shift
         ;;
+    debug)
+        debug
+        ;;
+    distclean)
+        distclean
+        ;;
     enter)
         enter
         ;;
@@ -177,6 +243,9 @@ while [ $# -gt 0 ]; do
         ;;
     stop)
         stop
+        ;;
+    tidy)
+        tidy
         ;;
     help|-h|--help)
         usage
