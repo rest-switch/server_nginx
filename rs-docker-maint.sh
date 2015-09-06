@@ -97,7 +97,8 @@ distclean() {
 
 enter() {
     start
-    docker exec -it "${DOCKER_CNT_NAME}" /bin/bash
+    local docker_cnt_run=$(docker ps | grep "${DOCKER_IMG_NAME}:" | awk '{print $1}')
+    docker exec -it "${docker_cnt_run}" /bin/bash
 }
 
 load() {
@@ -190,10 +191,13 @@ Commands:
  distclean                remove everything
  enter                    enter a running container (will autocreate and start if needed)
  load <tar.xz>            load an existing image
+ run                      alias for start
  setpass <userid> <pass>  set credentials for /secure website
  show                     show docker image and container information
  start                    start ${DOCKER_CNT_NAME} docker container (will autocreate if needed)
  stop                     stop ${DOCKER_CNT_NAME} docker container
+ term                     alias for enter
+ terminal                 alias for enter
  tidy                     similar to clean, but does not remove container
 
 EOF
@@ -214,8 +218,12 @@ while [ $# -gt 0 ]; do
         clean
         ;;
     create)
-        create "${2}"
-        shift
+        if [ "${2}" == "auto" ]; then
+            test_fcn auto
+            shift
+        else
+            test_fcn
+        fi
         ;;
     debug)
         debug
@@ -230,10 +238,12 @@ while [ $# -gt 0 ]; do
         load "${2}"
         shift
         ;;
+    run)
+        start
+        ;;
     setpass)
         setpass "${2}" "${3}"
-        shift
-        shift
+        shift 2
         ;;
     show)
         show
@@ -243,6 +253,12 @@ while [ $# -gt 0 ]; do
         ;;
     stop)
         stop
+        ;;
+    term)
+        enter
+        ;;
+    terminal)
+        enter
         ;;
     tidy)
         tidy
