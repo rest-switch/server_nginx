@@ -68,7 +68,7 @@ deploy:
 			xz -z > "restswitch_web_docker_$$(docker images | grep '^$(DOCKER_TAG)[[:space:]]*latest' | awk '{print $$3}').tar.xz"; \
 	fi
 	@echo 'docker image packaging now complete'
-	@echo 'use the rs-docker-maint.sh script to help manage the image'
+	@echo 'use the rs-docker-util.sh script to help manage the image'
 	@echo
 
 nginx: | $(NGINX)
