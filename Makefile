@@ -46,7 +46,7 @@ all docker: nginx stop
 	@echo ' - to run this image remotely, run: "make deploy"'
 	@echo
 
-run:
+start run:
 	@if [ -z "$(DOCKER_CNT_RUN)" ]; then \
 		echo "starting container: $(DOCKER_TAG):latest"; \
 		docker run -d -p "$(EXPOSED_HTTP_PORT):80" -p "$(EXPOSED_HTTPS_PORT):443" "$(DOCKER_TAG):latest"; \
@@ -83,7 +83,7 @@ show:
 	@echo "----------------------------------------------------------------------------------------------------"
 	@docker ps -a
 
-term shell join: run
+enter term terminal shell: run
 	# enter container interactively
 	@docker exec -it $(DOCKER_CNT_RUN) /bin/bash
 
@@ -142,5 +142,5 @@ distclean: stop clean
 		docker rmi -f $$(docker images | grep '$(DOCKER_BUILD_TAG)' | awk '{print $$3}'); \
 	fi
 
-.PHONY: all docker run deploy nginx show term shell join debug stop tidy clean distclean
+.PHONY: all docker start run deploy nginx show enter term terminal shell debug stop tidy clean distclean
 

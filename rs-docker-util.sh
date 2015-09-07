@@ -193,6 +193,7 @@ Commands:
  load <tar.xz>            load an existing image
  run                      alias for start
  setpass <userid> <pass>  set credentials for /secure website
+ shell                    alias for enter
  show                     show docker image and container information
  start                    start ${DOCKER_CNT_NAME} docker container (will autocreate if needed)
  stop                     stop ${DOCKER_CNT_NAME} docker container
@@ -244,6 +245,9 @@ while [ $# -gt 0 ]; do
     setpass)
         setpass "${2}" "${3}"
         shift 2
+        ;;
+    shell)
+        enter
         ;;
     show)
         show
