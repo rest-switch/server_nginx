@@ -122,11 +122,17 @@ clean: stop
 	fi
 
 	# delete old images (preserve the latest)
-	@for ver in $(DOCKER_IMG_OLD); do \
-		echo "removing docker image: $(DOCKER_TAG):$${ver}"; \
-		docker rmi -f $(DOCKER_TAG):$${ver}; \
-	done
-	@docker tag -f "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"
+	@if [ ! -z "$(DOCKER_IMG_OLD)" ]; then \
+		for ver in $(DOCKER_IMG_OLD); do \
+			echo "removing docker image: $(DOCKER_TAG):$${ver}"; \
+			docker rmi -f $(DOCKER_TAG):$${ver}; \
+		done; \
+	fi
+
+	# tag latest version
+	@if [ ! -z "$(DOCKER_IMG_LVER)" ]; then \
+		@docker tag -f "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"; \
+	fi
 
 	# delete untagged images
 	@if [ ! -z "$(DOCKER_IMG_UNTAG)" ]; then \
@@ -138,7 +144,7 @@ distclean: stop clean
 		docker rmi -f $(DOCKER_IMG_ALL); \
 	fi
 
-	@if [ ! -z $$(docker images | grep '$(DOCKER_BUILD_TAG)') ]; then \
+	@if [ ! -z "$$(docker images | grep '$(DOCKER_BUILD_TAG)')" ]; then \
 		docker rmi -f $$(docker images | grep '$(DOCKER_BUILD_TAG)' | awk '{print $$3}'); \
 	fi
 
