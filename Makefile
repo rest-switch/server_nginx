@@ -116,6 +116,8 @@ tidy:
 	fi
 
 clean: stop
+	rm -rf "$(NGINX)"
+
 	# delete our containers (running or stopped)
 	@if [ ! -z "$(DOCKER_CNT_ALL)" ]; then \
 		docker rm -f $(DOCKER_CNT_ALL); \
