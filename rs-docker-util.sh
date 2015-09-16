@@ -96,7 +96,8 @@ distclean() {
 }
 
 enter() {
-    start
+    local cnt_running=$(docker ps -q -f "name=${DOCKER_CNT_NAME}")
+    if [ -z "${cnt_running}" ]; then start; fi
     local docker_cnt_run=$(docker ps | grep "${DOCKER_IMG_NAME}:" | awk '{print $1}')
     docker exec -it "${docker_cnt_run}" /bin/bash
 }
@@ -139,7 +140,7 @@ start() {
         echo "container \"${DOCKER_CNT_NAME}\" is already running"
         echo "please run \"$(basename "$0") stop\" to stop the running container"
         echo
-        exit 1
+        return
     fi
 
     local cnt_stopped=$(docker ps -q -f "name=${DOCKER_CNT_NAME}" -f 'status=exited')
