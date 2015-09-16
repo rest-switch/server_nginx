@@ -220,10 +220,10 @@ while [ $# -gt 0 ]; do
         ;;
     create)
         if [ "${2}" == "auto" ]; then
-            test_fcn auto
+            create auto
             shift
         else
-            test_fcn
+            create
         fi
         ;;
     debug)
