@@ -92,10 +92,10 @@ debug:
 	# start a new (or enter a running) container with bash
 	@if [ -z "$(DOCKER_CNT_RUN)" ]; then \
 		echo "starting container: $(DOCKER_TAG):latest"; \
-		@docker run -it "$(DOCKER_TAG):latest" "/bin/bash"; \
+		docker run -it "$(DOCKER_TAG):latest" "/bin/bash"; \
 	else \
 		echo "found running container: $(DOCKER_CNT_RUN)"; \
-		@docker exec -it $(DOCKER_CNT_RUN) /bin/bash
+		docker exec -it $(DOCKER_CNT_RUN) /bin/bash
 	fi
 
 stop:
@@ -134,7 +134,7 @@ clean: stop
 
 	# tag latest version
 	@if [ ! -z "$(DOCKER_IMG_LVER)" ]; then \
-		@docker tag -f "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"; \
+		docker tag -f "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"; \
 	fi
 
 	# delete untagged images
@@ -143,6 +143,11 @@ clean: stop
 	fi
 
 distclean: stop clean
+	# delete build containers (running or stopped)
+	@if [ ! -z "$$(docker ps -a | grep '$(DOCKER_BUILD_TAG):' | awk '{print $$1}')" ]; then \
+		docker rm -f $$(docker ps -a | grep '$(DOCKER_BUILD_TAG):' | awk '{print $$1}'); \
+	fi
+
 	@if [ ! -z "$(DOCKER_IMG_ALL)" ]; then \
 		docker rmi -f $(DOCKER_IMG_ALL); \
 	fi
