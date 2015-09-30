@@ -24,21 +24,18 @@
 #include "auth.h"
 
 
+static ngx_int_t ngx_hmac_auth_result_handler(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data);
+static void *ngx_hmac_auth_create_conf(ngx_conf_t *cf);
+static char *ngx_hmac_auth_merge_conf(ngx_conf_t *cf, void *parent, void *child);
+static ngx_int_t ngx_hmac_auth_add_variables(ngx_conf_t *cf);
+
 typedef struct {
     ngx_http_complex_value_t  *hmac_auth_message;
     ngx_http_complex_value_t  *hmac_auth_secret;
     ngx_http_complex_value_t  *hmac_auth_hash;
 } ngx_hmac_auth_conf_t;
 
-
-static ngx_int_t ngx_hmac_auth_result_handler(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data);
-static void *ngx_hmac_auth_create_conf(ngx_conf_t *cf);
-static char *ngx_hmac_auth_merge_conf(ngx_conf_t *cf, void *parent, void *child);
-static ngx_int_t ngx_hmac_auth_add_variables(ngx_conf_t *cf);
-
-
-static ngx_command_t  ngx_hmac_auth_module_commands[] = {
-
+static ngx_command_t ngx_hmac_auth_module_commands[] = {
     { ngx_string("hmac_auth_message"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_http_set_complex_value_slot,
@@ -63,16 +60,14 @@ static ngx_command_t  ngx_hmac_auth_module_commands[] = {
       ngx_null_command
 };
 
-
-static ngx_http_variable_t  ngx_hmac_auth_vars[] = {
+static ngx_http_variable_t ngx_hmac_auth_vars[] = {
     { ngx_string("hmac_auth_result"), NULL,
       ngx_hmac_auth_result_handler, 0, NGX_HTTP_VAR_CHANGEABLE, 0 },
 
     { ngx_null_string, NULL, NULL, 0, 0, 0 }
 };
 
-
-static ngx_http_module_t  ngx_hmac_auth_module_ctx = {
+static ngx_http_module_t ngx_hmac_auth_module_ctx = {
     ngx_hmac_auth_add_variables,     // preconfiguration
     NULL,                            // postconfiguration
 
@@ -86,8 +81,7 @@ static ngx_http_module_t  ngx_hmac_auth_module_ctx = {
     ngx_hmac_auth_merge_conf         // merge location configuration
 };
 
-
-static ngx_module_t  ngx_hmac_auth_module = {
+static ngx_module_t ngx_hmac_auth_module = {
     NGX_MODULE_V1,
     &ngx_hmac_auth_module_ctx,       // module context
     ngx_hmac_auth_module_commands,   // module directives
@@ -103,6 +97,7 @@ static ngx_module_t  ngx_hmac_auth_module = {
 };
 
 
+////////////////////////////////////////////////////////////
 static ngx_int_t ngx_hmac_auth_result_handler(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
 {
     ngx_hmac_auth_conf_t    *conf;
@@ -199,7 +194,7 @@ not_found:
     return NGX_OK;
 }
 
-
+////////////////////////////////////////////////////////////
 static void *ngx_hmac_auth_create_conf(ngx_conf_t *cf)
 {
     ngx_hmac_auth_conf_t  *conf;
@@ -217,7 +212,7 @@ static void *ngx_hmac_auth_create_conf(ngx_conf_t *cf)
     return conf;
 }
 
-
+////////////////////////////////////////////////////////////
 static char *ngx_hmac_auth_merge_conf(ngx_conf_t *cf, void *parent, void *child)
 {
     ngx_hmac_auth_conf_t *prev = parent;
@@ -238,7 +233,7 @@ static char *ngx_hmac_auth_merge_conf(ngx_conf_t *cf, void *parent, void *child)
     return NGX_CONF_OK;
 }
 
-
+////////////////////////////////////////////////////////////
 static ngx_int_t ngx_hmac_auth_add_variables(ngx_conf_t *cf)
 {
     ngx_http_variable_t  *var, *v;
