@@ -81,7 +81,7 @@ static ngx_http_module_t ngx_hmac_auth_module_ctx = {
     ngx_hmac_auth_merge_conf         // merge location configuration
 };
 
-static ngx_module_t ngx_hmac_auth_module = {
+ngx_module_t ngx_hmac_auth_module = {
     NGX_MODULE_V1,
     &ngx_hmac_auth_module_ctx,       // module context
     ngx_hmac_auth_module_commands,   // module directives
