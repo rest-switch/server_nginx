@@ -69,6 +69,7 @@ $(NGINX_MAKEFILE): | $(NGINX_ROOT) modules
 		--with-pcre \
 		--with-http_auth_request_module \
 		--add-module=../$(MOD_PS_ROOT) \
+		--add-module=../ngx_hmac_auth_module \
 		--with-debug \
 		--with-cc-opt='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4 -m64 -mtune=generic' \
 		--with-ld-opt=' -Wl,-E'

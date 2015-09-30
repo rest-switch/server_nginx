@@ -26,7 +26,8 @@ RUN yum -y install gcc make google-perftools-devel pcre-devel openssl-devel && y
 # nginx build
 RUN useradd buildd
 USER buildd
-ADD Makefile /home/buildd/Makefile
+COPY Makefile /home/buildd/Makefile
+COPY ngx_hmac_auth_module /home/buildd/ngx_hmac_auth_module
 CMD [ "make","-C","/home/buildd" ]
 ENV TERM xterm
 USER root

@@ -24,10 +24,10 @@ RUN yum -y install epel-release tar wget nano && yum clean all
 RUN yum -y install nginx && yum clean all
 
 # nginx and conf
-ADD nginx /usr/sbin/nginx
-ADD nginx.conf /etc/nginx/nginx.conf
+COPY nginx /usr/sbin/nginx
+COPY nginx.conf /etc/nginx/nginx.conf
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf
-ADD make_pass.sh /etc/nginx/conf.d/make_pass.sh
+COPY make_pass.sh /etc/nginx/conf.d/make_pass.sh
 
 # nginx html
 RUN rm -rf /usr/share/nginx/html
@@ -40,9 +40,9 @@ RUN \
 # nginx certs
 RUN mkdir -p /etc/nginx/conf.d/certs && chown root:nginx /etc/nginx/conf.d/certs && chmod 750 /etc/nginx/conf.d/certs
 # chain: cert pub first, ca pub second
-ADD cert-chain-public.pem /etc/nginx/conf.d/certs/cert-chain-public.pem
+COPY cert-chain-public.pem /etc/nginx/conf.d/certs/cert-chain-public.pem
 RUN chown root:nginx /etc/nginx/conf.d/certs/cert-chain-public.pem && chmod 640 /etc/nginx/conf.d/certs/cert-chain-public.pem
-ADD cert-private.pem /etc/nginx/conf.d/certs/cert-private.pem
+COPY cert-private.pem /etc/nginx/conf.d/certs/cert-private.pem
 RUN chown root:nginx /etc/nginx/conf.d/certs/cert-private.pem && chmod 640 /etc/nginx/conf.d/certs/cert-private.pem
 
 # run
