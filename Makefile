@@ -95,7 +95,7 @@ debug:
 		docker run -it "$(DOCKER_TAG):latest" "/bin/bash"; \
 	else \
 		echo "found running container: $(DOCKER_CNT_RUN)"; \
-		docker exec -it $(DOCKER_CNT_RUN) /bin/bash
+		docker exec -it $(DOCKER_CNT_RUN) /bin/bash; \
 	fi
 
 stop:
