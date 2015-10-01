@@ -27,6 +27,7 @@ RUN yum -y install nginx && yum clean all
 COPY nginx /usr/sbin/nginx
 COPY nginx.conf /etc/nginx/nginx.conf
 RUN echo "daemon off;" >> /etc/nginx/nginx.conf
+COPY make_hash.sh /etc/nginx/conf.d/make_hash.sh
 COPY make_pass.sh /etc/nginx/conf.d/make_pass.sh
 
 # nginx html
