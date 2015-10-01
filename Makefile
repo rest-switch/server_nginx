@@ -28,6 +28,7 @@ DOCKER_IMG_ALL    := $$(docker images | grep '^$(DOCKER_TAG)[[:space:]]' | awk '
 DOCKER_IMG_LVER   := $$(docker images | grep '^$(DOCKER_TAG)[[:space:]]' | awk '{print $$2}' | sort -rn | head -n1)
 DOCKER_IMG_OLD    := $$(docker images | grep '^$(DOCKER_TAG)[[:space:]]' | awk '{print $$2}' | sort -rn | tail -n+2)
 DOCKER_IMG_UNTAG  := $$(docker images -qf "dangling=true")
+DOCKER_CNT_NAME   := restswitch_webserver
 DOCKER_CNT_ALL    := $$(docker ps -a | grep '$(DOCKER_TAG):' | awk '{print $$1}')
 DOCKER_CNT_RUN    := $$(docker ps | grep '$(DOCKER_TAG):' | awk '{print $$1}')
 DOCKER_CNT_EXIT   := $$(docker ps -f 'status=exited' | grep '$(DOCKER_TAG):' | awk '{print $$1}')
@@ -49,7 +50,7 @@ all docker: nginx stop
 start run:
 	@if [ -z "$(DOCKER_CNT_RUN)" ]; then \
 		echo "starting container: $(DOCKER_TAG):latest"; \
-		docker run -d -p "$(EXPOSED_HTTP_PORT):80" -p "$(EXPOSED_HTTPS_PORT):443" "$(DOCKER_TAG):latest"; \
+		docker run -d --name "${DOCKER_CNT_NAME}" -p "$(EXPOSED_HTTP_PORT):80" -p "$(EXPOSED_HTTPS_PORT):443" "$(DOCKER_TAG):latest"; \
 	else \
 		echo "found running container: $(DOCKER_CNT_RUN)"; \
 	fi
