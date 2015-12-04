@@ -68,10 +68,10 @@ deploy:
 			pv -s $$(docker inspect '$(DOCKER_TAG):latest' | grep VirtualSize | awk '{printf "%.0f", $$2 * 1.04}') | \
 			xz -z > "restswitch_web_docker_$$(docker images | grep '^$(DOCKER_TAG)[[:space:]]*latest' | awk '{print $$3}').tar.xz"; \
 	fi
-	@echo "docker image packaging now complete: \033[1;32mrestswitch_web_docker_$$(docker images | grep '^$(DOCKER_TAG)[[:space:]]*latest' | awk '{print $$3}').tar.xz\033[0m"
-	@echo "use the \033[0;32mrs-docker-util.sh\033[0m script to help manage this image:\033[0;32m"
+	@echo -e "docker image packaging now complete: \033[1;32mrestswitch_web_docker_$$(docker images | grep '^$(DOCKER_TAG)[[:space:]]*latest' | awk '{print $$3}').tar.xz\033[0m"
+	@echo -e "use the \033[0;32mrs-docker-util.sh\033[0m script to help manage this image:\033[0;32m"
 	@ls -al "rs-docker-util.sh"
-	@echo "\033[0m"
+	@echo -e "\033[0m"
 
 nginx: | $(NGINX)
 $(NGINX):
