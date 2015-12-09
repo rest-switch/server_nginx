@@ -31,7 +31,7 @@ MYFILE=$(readlink -f "$0")
 MYDIR=$(dirname "${MYFILE}")
 PASS_FILE="${MYDIR}/passwd"
 
-CRYPT=$(openssl passwd "$PASSWD")
+CRYPT=$(python -c "import crypt; print crypt.crypt(\"$PASSWD\", crypt.mksalt(crypt.METHOD_SHA256))")
 
 rm -rf "${PASS_FILE}"
 touch "${PASS_FILE}"
