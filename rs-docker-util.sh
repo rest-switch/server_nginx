@@ -116,27 +116,16 @@ load() {
     docker images
 }
 
-sethash() {
+setpass() {
     local email=$1
     local passwd=$2
-    if [ -z "${email}" ] || [ -z "${passwd}" ]; then
+    if [ -z "${userid}" ] || [ -z "${passwd}" ]; then
         echo 'error: email and password must be specified'
         exit 4;
     fi
-
+    docker exec -it "${DOCKER_CNT_NAME}" "/etc/nginx/conf.d/set_pass.sh" "${email}" "${passwd}"
     local hash=$(docker exec -it "${DOCKER_CNT_NAME}" "/etc/nginx/conf.d/make_hash.sh" "${email}" "${passwd}" | tr -d '\r\n')
     docker exec -it "${DOCKER_CNT_NAME}" sed -i "s/hmac_auth_secret.*$/hmac_auth_secret    \"${hash}\";/g" "/etc/nginx/nginx.conf"
-    docker exec -it "${DOCKER_CNT_NAME}" pkill -HUP nginx
-}
-
-setpass() {
-    local userid=$1
-    local passwd=$2
-    if [ -z "${userid}" ] || [ -z "${passwd}" ]; then
-        echo 'error: userid and password must be specified'
-        exit 6;
-    fi
-    docker exec -it "${DOCKER_CNT_NAME}" "/etc/nginx/conf.d/make_pass.sh" "${userid}" "${passwd}"
     docker exec -it "${DOCKER_CNT_NAME}" pkill -HUP nginx
 }
 
@@ -199,22 +188,21 @@ Usage:
  $(basename "$0") <command>
 
 Commands:
- clean                    remove everything but the ${DOCKER_CNT_NAME} docker image
- create [auto]            create [an autostart on boot] ${DOCKER_CNT_NAME} docker container
- debug                    enter a the running container or start a container using bash
- distclean                remove everything
- enter                    enter a running container (will autocreate and start if needed)
- load <tar.xz>            load an existing image
- run                      alias for start
- sethash <email> <pass>   set credentials for nginx.conf auth hash
- setpass <userid> <pass>  set credentials for /secure website
- shell                    alias for enter
- show                     show docker image and container information
- start                    start ${DOCKER_CNT_NAME} docker container (will autocreate if needed)
- stop                     stop ${DOCKER_CNT_NAME} docker container
- term                     alias for enter
- terminal                 alias for enter
- tidy                     similar to clean, but does not remove container
+ clean                   remove everything but the ${DOCKER_CNT_NAME} docker image
+ create [auto]           create [an autostart on boot] ${DOCKER_CNT_NAME} docker container
+ debug                   enter a the running container or start a container using bash
+ distclean               remove everything
+ enter                   enter a running container (will autocreate and start if needed)
+ load <tar.xz>           load an existing image
+ run                     alias for start
+ setpass <email> <pass>  set credentials for /secure website
+ shell                   alias for enter
+ show                    show docker image and container information
+ start                   start ${DOCKER_CNT_NAME} docker container (will autocreate if needed)
+ stop                    stop ${DOCKER_CNT_NAME} docker container
+ term                    alias for enter
+ terminal                alias for enter
+ tidy                    similar to clean, but does not remove container
 
 EOF
 }
