@@ -124,8 +124,6 @@ setpass() {
         exit 4;
     fi
     docker exec -it "${DOCKER_CNT_NAME}" "/etc/nginx/conf.d/set_pass.sh" "${email}" "${passwd}"
-    local hash=$(docker exec -it "${DOCKER_CNT_NAME}" "/etc/nginx/conf.d/make_hash.sh" "${email}" "${passwd}" | tr -d '\r\n')
-    docker exec -it "${DOCKER_CNT_NAME}" sed -i "s/hmac_auth_secret.*$/hmac_auth_secret    \"${hash}\";/g" "/etc/nginx/nginx.conf"
     docker exec -it "${DOCKER_CNT_NAME}" pkill -HUP nginx
 }
 

@@ -18,11 +18,12 @@
 #
 
 
-USERID="$1"
+EMAIL="$1"
 PASSWD="$2"
-if [ -z $USERID ] || [ -z $PASSWD ]; then
+REPLACE="$3"
+if [ -z $EMAIL ] || [ -z $PASSWD ]; then
     echo
-    echo "usage: $(basename $0) <userid> <password>"
+    echo "usage: $(basename $0) <email> <password> [replace (y/N)]"
     echo
     exit 1
 fi
@@ -31,11 +32,17 @@ MYFILE=$(readlink -f "$0")
 MYDIR=$(dirname "${MYFILE}")
 PASS_FILE="${MYDIR}/passwd"
 
+# hmac sha256 hash, base64url encoded
+HASH=$(echo -n "$EMAIL" | openssl dgst -sha256 -hmac "$PASSWD" -binary | openssl enc -base64 | tr -d '=' | tr '/+' '_-')
+sed -i "s/hmac_auth_secret.*$/hmac_auth_secret    \"$HASH\";/g" "/etc/nginx/nginx.conf"
+
 CRYPT=$(python -c "import crypt; print crypt.crypt(\"$PASSWD\", crypt.mksalt(crypt.METHOD_SHA256))")
 
-rm -rf "${PASS_FILE}"
-touch "${PASS_FILE}"
+if [ 0 -eq $(echo "$REPLACE" | grep -q -i -e "^yes$" -e "^true$" -e "^1$" ; echo $?) ]; then
+    rm -rf "${PASS_FILE}"
+    touch "${PASS_FILE}"
+fi
 chown root:nginx "${PASS_FILE}"
 chmod 640 "${PASS_FILE}"
-echo "$USERID:$CRYPT" > "${PASS_FILE}"
+echo "$EMAIL:$CRYPT" >> "${PASS_FILE}"
 
