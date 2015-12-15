@@ -119,7 +119,7 @@ load() {
 setpass() {
     local email=$1
     local passwd=$2
-    if [ -z "${userid}" ] || [ -z "${passwd}" ]; then
+    if [ -z "${email}" ] || [ -z "${passwd}" ]; then
         echo 'error: email and password must be specified'
         exit 4;
     fi
