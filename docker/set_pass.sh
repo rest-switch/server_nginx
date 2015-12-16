@@ -23,7 +23,7 @@ PASSWD="$2"
 REPLACE="$3"
 if [ -z $EMAIL ] || [ -z $PASSWD ]; then
     echo
-    echo "usage: $(basename $0) <email> <password> [replace (y/N)]"
+    echo "usage: $(basename $0) <email> <password> [replace file (y/N)]"
     echo
     exit 1
 fi
@@ -38,7 +38,7 @@ sed -i "s/hmac_auth_secret.*$/hmac_auth_secret    \"$HASH\";/g" "/etc/nginx/ngin
 
 CRYPT=$(python -c "import crypt; print crypt.crypt(\"$PASSWD\", crypt.mksalt(crypt.METHOD_SHA256))")
 
-if [ 0 -eq $(echo "$REPLACE" | grep -q -i -e "^yes$" -e "^true$" -e "^1$" ; echo $?) ]; then
+if [ 0 -eq $(echo "$REPLACE" | grep -q -i -e "^y$" -e "^yes$" -e "^t$" -e "^true$" -e "^1$" ; echo $?) ]; then
     rm -rf "${PASS_FILE}"
     touch "${PASS_FILE}"
 fi

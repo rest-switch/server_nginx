@@ -123,7 +123,7 @@ setpass() {
         echo 'error: email and password must be specified'
         exit 4;
     fi
-    docker exec -it "${DOCKER_CNT_NAME}" "/etc/nginx/conf.d/set_pass.sh" "${email}" "${passwd}"
+    docker exec -it "${DOCKER_CNT_NAME}" "/etc/nginx/conf.d/set_pass.sh" "${email}" "${passwd}" YES
     docker exec -it "${DOCKER_CNT_NAME}" pkill -HUP nginx
 }
 
