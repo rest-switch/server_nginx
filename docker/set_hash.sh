@@ -21,14 +21,16 @@
 if [ $# -ne 2 ]; then
     echo
     echo "Usage:"
-    echo "  $(basename "$0") <email> <secret>"
+    echo "  $(basename "$0") <email> <password>"
     echo
     exit 0
 fi
 
-MSG=$1
-KEY=$2
+EMAIL=$1
+PASSWD=$2
+NGINX_CONF="/etc/nginx/nginx.conf"
 
 # hmac sha256 hash, base64url encoded
-echo -n "${MSG}" | openssl dgst -sha256 -hmac "${KEY}" -binary | openssl enc -base64 | tr -d '=' | tr '/+' '_-'
+HASH=$(echo -n "$EMAIL" | openssl dgst -sha256 -hmac "$PASSWD" -binary | openssl enc -base64 | tr -d '=' | tr '/+' '_-')
+sed -i "s/hmac_auth_secret.*$/hmac_auth_secret    \"$HASH\";/g" "$NGINX_CONF"
 

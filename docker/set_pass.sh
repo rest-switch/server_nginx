@@ -32,10 +32,6 @@ MYFILE=$(readlink -f "$0")
 MYDIR=$(dirname "${MYFILE}")
 PASS_FILE="${MYDIR}/passwd"
 
-# hmac sha256 hash, base64url encoded
-HASH=$(echo -n "$EMAIL" | openssl dgst -sha256 -hmac "$PASSWD" -binary | openssl enc -base64 | tr -d '=' | tr '/+' '_-')
-sed -i "s/hmac_auth_secret.*$/hmac_auth_secret    \"$HASH\";/g" "/etc/nginx/nginx.conf"
-
 CRYPT=$(python -c "import crypt; print crypt.crypt(\"$PASSWD\", crypt.mksalt(crypt.METHOD_SHA256))")
 
 if [ 0 -eq $(echo "$REPLACE" | grep -q -i -e "^y$" -e "^yes$" -e "^t$" -e "^true$" -e "^1$" ; echo $?) ]; then
