@@ -116,12 +116,23 @@ load() {
     docker images
 }
 
-setpass() {
+sethash() {
     local email=$1
     local passwd=$2
     if [ -z "${email}" ] || [ -z "${passwd}" ]; then
         echo 'error: email and password must be specified'
         exit 4;
+    fi
+    docker exec -it "${DOCKER_CNT_NAME}" "/etc/nginx/conf.d/set_hash.sh" "${email}" "${passwd}"
+    docker exec -it "${DOCKER_CNT_NAME}" pkill -HUP nginx
+}
+
+setpass() {
+    local email=$1
+    local passwd=$2
+    if [ -z "${email}" ] || [ -z "${passwd}" ]; then
+        echo 'error: email and password must be specified'
+        exit 6;
     fi
     docker exec -it "${DOCKER_CNT_NAME}" "/etc/nginx/conf.d/set_pass.sh" "${email}" "${passwd}" YES
     docker exec -it "${DOCKER_CNT_NAME}" pkill -HUP nginx
@@ -193,6 +204,7 @@ Commands:
  enter                   enter a running container (will autocreate and start if needed)
  load <tar.xz>           load an existing image
  run                     alias for start
+ sethash <email> <pass>  set credentials for nginx.conf auth hash
  setpass <email> <pass>  set credentials for /secure website
  shell                   alias for enter
  show                    show docker image and container information
