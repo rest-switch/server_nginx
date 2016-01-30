@@ -62,8 +62,9 @@ create() {
         exit 1
     fi
 
-    local cnt_stopped=$(docker ps -q -f "name=${DOCKER_CNT_NAME}" -f 'status=exited')
-    if [ ! -z "${cnt_stopped}" ]; then
+    local cnt_created=$(docker ps -aq -f "name=${DOCKER_CNT_NAME}" -f 'status=created')
+    local cnt_stopped=$(docker ps -aq -f "name=${DOCKER_CNT_NAME}" -f 'status=exited')
+    if [ -z "${cnt_created}" ] && [ -z "${cnt_stopped}" ]; then
         echo
         echo "container \"${DOCKER_CNT_NAME}\" has already been created but is not running"
         echo "please run \"$(basename "$0") clean\" to remove the stopped container"
@@ -154,8 +155,9 @@ start() {
         return
     fi
 
-    local cnt_stopped=$(docker ps -q -f "name=${DOCKER_CNT_NAME}" -f 'status=exited')
-    if [ -z "${cnt_stopped}" ]; then
+    local cnt_created=$(docker ps -aq -f "name=${DOCKER_CNT_NAME}" -f 'status=created')
+    local cnt_stopped=$(docker ps -aq -f "name=${DOCKER_CNT_NAME}" -f 'status=exited')
+    if [ -z "${cnt_created}" ] && [ -z "${cnt_stopped}" ]; then
         echo
         echo "container \"${DOCKER_CNT_NAME}\" does not exist to start"
         echo "please run \"$(basename "$0") create\" to create the container"
