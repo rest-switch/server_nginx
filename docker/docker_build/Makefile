@@ -16,8 +16,8 @@
 # Author: John Clark (johnc@restswitch.com)
 #
 
-NGINX_SRC_URL   := http://nginx.org/download/nginx-1.8.0.tar.gz
-NGINX_ROOT      := nginx-1.8.0
+NGINX_SRC_URL   := http://nginx.org/download/nginx-1.8.1.tar.gz
+NGINX_ROOT      := nginx-1.8.1
 NGINX_MAKEFILE  := $(NGINX_ROOT)/Makefile
 NGINX           := $(NGINX_ROOT)/objs/nginx
 NGINX_DEST      := nginx
