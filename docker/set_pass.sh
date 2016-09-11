@@ -36,8 +36,8 @@ CRYPT=$(python -c "import crypt; print crypt.crypt(\"$PASSWD\", crypt.mksalt(cry
 
 if [ 0 -eq $(echo "$REPLACE" | grep -q -i -e "^y$" -e "^yes$" -e "^t$" -e "^true$" -e "^1$" ; echo $?) ]; then
     rm -rf "${PASS_FILE}"
-    touch "${PASS_FILE}"
 fi
+touch "${PASS_FILE}"
 chown root:nginx "${PASS_FILE}"
 chmod 640 "${PASS_FILE}"
 echo "$EMAIL:$CRYPT" >> "${PASS_FILE}"
