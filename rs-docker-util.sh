@@ -41,7 +41,7 @@ clean() {
         docker rmi -f "${DOCKER_IMG_NAME}:${ver}"
     done
     local docker_img_lver=$(docker images | grep "^${DOCKER_IMG_NAME}[[:space:]]" | awk '{print $2}' | sort -rn | head -n1)
-    docker tag -f "${DOCKER_IMG_NAME}:${docker_img_lver}" "${DOCKER_IMG_NAME}:latest"
+    docker tag "${DOCKER_IMG_NAME}:${docker_img_lver}" "${DOCKER_IMG_NAME}:latest"
 
     # delete untagged images
     local docker_img_untag=$(docker images -qf "dangling=true")

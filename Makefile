@@ -40,7 +40,7 @@ all docker: nginx stop
 	@if [ ! -f "$(DOCKER)/cert-chain-public.pem" ]; then touch "$(DOCKER)/cert-chain-public.pem"; fi
 	@if [ ! -f "$(DOCKER)/cert-private.pem" ]; then touch "$(DOCKER)/cert-private.pem"; fi
 	@docker build -t "$(DOCKER_TAG):$(VER)" "$(DOCKER)"
-	@docker tag -f "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"
+	@docker tag "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"
 	@echo
 	@echo 'the docker image is now built'
 	@echo ' - to run this image locally, run: "make run"'
@@ -135,7 +135,7 @@ clean: stop
 
 	# tag latest version
 	@if [ ! -z "$(DOCKER_IMG_LVER)" ]; then \
-		docker tag -f "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"; \
+		docker tag "$(DOCKER_TAG):$(DOCKER_IMG_LVER)" "$(DOCKER_TAG):latest"; \
 	fi
 
 	# delete untagged images
